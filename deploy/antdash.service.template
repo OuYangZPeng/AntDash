@@ -1,0 +1,20 @@
+[Unit]
+Description=AntDash Backend API
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=${INSTALL_DIR}/backend
+Environment=ANTDASH_PORT=${PORT}
+
+# Create venv on first boot if missing (keeps the deploy script simple).
+ExecStartPre=/bin/bash -c 'cd ${INSTALL_DIR}/backend && [ -d .venv ] || python3 -m venv .venv'
+
+# Activate venv, install deps, seed (best-effort), then run uvicorn WITHOUT --reload (production).
+ExecStart=/bin/bash -c 'cd ${INSTALL_DIR}/backend && source .venv/bin/activate && pip install -q -r requirements.txt && python seed.py || true && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}'
+
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

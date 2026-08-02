@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:antdash/config.dart';
 import 'models.dart';
 
 class ApiException implements Exception {
@@ -11,11 +12,12 @@ class ApiException implements Exception {
 }
 
 class ApiClient {
+  /// Backend endpoint. Defaults to [AppConfig.baseUrl].
   /// Use 10.0.2.2 for the Android emulator, 127.0.0.1 elsewhere.
   String baseUrl;
   String? _token;
 
-  ApiClient({this.baseUrl = 'http://127.0.0.1:8080'});
+  ApiClient({this.baseUrl = AppConfig.baseUrl});
 
   void setToken(String? token) => _token = token;
   bool get authenticated => _token != null;
