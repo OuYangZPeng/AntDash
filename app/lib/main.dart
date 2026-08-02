@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'api/api_client.dart';
+import 'dns_override.dart';
 import 'state/app_state.dart';
 import 'theme.dart';
 import 'screens/login_screen.dart';
@@ -9,6 +10,8 @@ import 'screens/real_name_screen.dart';
 import 'screens/home_shell.dart';
 
 void main() {
+  // Bypass device DNS for the API host (fixes errno 7 on some carriers/ROMs).
+  installFixedIpOverride();
   runApp(const AntDashApp());
 }
 

@@ -5,19 +5,18 @@
 class AppConfig {
   /// Base URL of the AntDash backend API.
   ///
-  /// Override at build time without editing source:
+  /// Defaults to the server IP (with HTTPS) to bypass the device DNS resolver,
+  /// which fails with errno 7 on some carriers/ROMs even though the domain
+  /// resolves in the browser. The certificate is pinned in dns_override.dart,
+  /// so HTTPS integrity is preserved. Override at build time:
   ///   flutter build apk --release --dart-define=BASE_URL=https://www.antdash.com
   ///
   /// Environments:
   /// - Local (physical device / iOS simulator):  http://127.0.0.1:8080
   /// - Android emulator:                          http://10.0.2.2:8080
-  /// - Production (Tencent Cloud + HTTPS):        https://www.antdash.com
-  ///
-  /// NOTE: Android 9+ blocks cleartext HTTP by default. Use the HTTPS URL
-  /// (or add `android:usesCleartextTraffic="true"` to the manifest) for a
-  /// real device connecting to a plain-HTTP backend.
+  /// - Production (Tencent Cloud, IP, cert-pinned): https://170.106.190.169
   static const String baseUrl = String.fromEnvironment(
     'BASE_URL',
-    defaultValue: 'https://www.antdash.com',
+    defaultValue: 'https://170.106.190.169',
   );
 }
