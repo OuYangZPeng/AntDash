@@ -19,6 +19,10 @@ class ApiClient {
 
   ApiClient({this.baseUrl = AppConfig.baseUrl});
 
+  /// HTTP client with an explicit connection timeout so DNS / network failures
+  /// surface as a clear message instead of a low-level errno.
+  final http.Client _client = http.Client();
+
   void setToken(String? token) => _token = token;
   bool get authenticated => _token != null;
   String? get token => _token;
@@ -49,12 +53,24 @@ class ApiClient {
     throw ApiException(r.statusCode, detail);
   }
 
-  Future<dynamic> _get(String path) async =>
-      _decode(await http.get(_uri(path), headers: _headers));
+  Future<dynamic> _get(String path) async {
+    final resp = await _client
+        .get(_uri(path), headers: _headers)
+        .timeout(const Duration(seconds: 10),
+            onTimeout: () => throw ApiException(
+                0, '连接超时：无法访问 $baseUrl，请检查网络/DNS'));
+    return _decode(resp);
+  }
 
-  Future<dynamic> _post(String path, [Map<String, dynamic>? body]) async =>
-      _decode(await http.post(_uri(path),
-          headers: _headers, body: body == null ? null : jsonEncode(body)));
+  Future<dynamic> _post(String path, [Map<String, dynamic>? body]) async {
+    final resp = await _client
+        .post(_uri(path),
+            headers: _headers, body: body == null ? null : jsonEncode(body))
+        .timeout(const Duration(seconds: 10),
+            onTimeout: () => throw ApiException(
+                0, '连接超时：无法访问 $baseUrl，请检查网络/DNS'));
+    return _decode(resp);
+  }
 
   // --- auth ---
   Future<Map<String, dynamic>> loginPhone(String phone, String otp,
@@ -135,7 +151,9 @@ class ApiClient {
     if (_token != null) req.headers['Authorization'] = 'Bearer $_token';
     req.files.add(http.MultipartFile.fromBytes('file', bytes,
         filename: 'proof.jpg'));
-    final resp = await http.Response.fromStream(await req.send());
+    final resp = await http.Response.fromStream(await req.send())
+        .timeout(const Duration(seconds: 20),
+            onTimeout: () => throw ApiException(0, '上传超时'));
     _decode(resp);
   }
 
