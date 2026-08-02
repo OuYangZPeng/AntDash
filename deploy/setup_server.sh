@@ -33,6 +33,12 @@ if [[ -z "$DOMAIN" ]]; then
   exit 1
 fi
 
+# Export every variable consumed by envsubst below. envsubst runs in a child
+# process and can only see EXPORTED variables; otherwise placeholders like
+# ${DOMAIN} / ${INSTALL_DIR} / ${PORT} are left unsubstituted (causing the
+# "server_name" and systemd failures).
+export DOMAIN INSTALL_DIR PORT
+
 echo "==> Deploying AntDash backend"
 echo "    domain : $DOMAIN"
 echo "    dir    : $INSTALL_DIR"
@@ -80,7 +86,6 @@ python "$BACKEND_DIR/seed.py" || true   # seed demo data (best-effort)
 # 4. systemd service
 # ---------------------------------------------------------------------------
 echo "==> Installing systemd service..."
-export ANTDASH_PORT="$PORT"   # reference inside the unit file below
 envsubst '${INSTALL_DIR} ${PORT}' > /etc/systemd/system/antdash.service \
   < "$INSTALL_DIR/deploy/antdash.service.template"
 
@@ -102,7 +107,7 @@ envsubst '${DOMAIN}' > /etc/nginx/sites-available/antdash \
 ln -sf /etc/nginx/sites-available/antdash /etc/nginx/sites-enabled/antdash
 # remove default site to avoid conflicts
 rm -f /etc/nginx/sites-enabled/default
-nginx -t
+nginx -t   # fails here (set -e) if substitution left a literal ${DOMAIN}
 systemctl reload nginx
 
 # ---------------------------------------------------------------------------
